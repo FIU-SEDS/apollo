@@ -1,0 +1,3 @@
+/Users/user/projects/apollo/apollo/build/CMakeFiles/apollo.dir
+/Users/user/projects/apollo/apollo/build/CMakeFiles/edit_cache.dir
+/Users/user/projects/apollo/apollo/build/CMakeFiles/rebuild_cache.dir
