@@ -30,14 +30,19 @@ set(IMGUI_SOURCES
 
 
 # Your source files
-file(GLOB_RECURSE APOLLO_SOURCES "apollo/src/*.cpp")
+file(GLOB GUI_SOURCES "apollo/gui/*.cpp")
 
+set(APOLLO_SOURCES
+    ${GUI_SOURCES}
+)
 # Create executable
 add_executable(apollo ${APOLLO_SOURCES} ${IMGUI_SOURCES} ${GLAD_SOURCES})
 
+# TODO: add subdirectories
+
 # include directories
 target_include_directories(apollo PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/apollo/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/apollo/
   ${GLAD_DIR}/include
   ${IMGUI_DIR}
   ${IMGUI_DIR}/backends
