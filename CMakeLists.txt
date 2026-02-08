@@ -31,9 +31,11 @@ set(IMGUI_SOURCES
 
 # Your source files
 file(GLOB GUI_SOURCES "apollo/gui/*.cpp")
+file(GLOB CORE_SOURCES "apollo/core/*.cpp")
 
 set(APOLLO_SOURCES
     ${GUI_SOURCES}
+    ${CORE_SOURCES}
 )
 # Create executable
 add_executable(apollo ${APOLLO_SOURCES} ${IMGUI_SOURCES} ${GLAD_SOURCES})
