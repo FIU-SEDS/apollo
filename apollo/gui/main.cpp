@@ -1,13 +1,13 @@
-#include <cstdint>
 #include <cstdio>
+#include <string>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include "core/sensor_data.h"
 
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
-#include <stdio.h>
 
 int main()
 {
@@ -36,7 +36,8 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    float altitude = 0.0f;
+    sensor_data data{};
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -48,20 +49,28 @@ int main()
         ImGui::SetNextWindowSize(ImVec2(0.0f, 0.0f));
 
         // UI
-        ImGui::Begin("Apollo UI");
-        ImGui::Text("ImGui is working!");
-        // if (ImGui::Button("Press me"))
-         //  printf("Button pressed\n");
-         //
-        // Slider
-        ImGui::SliderFloat("altitude", &altitude, 0.0f, 10000.0f, "value = %0.3f");
-        printf("altitude value = %0.3f\n", altitude);
+        ImGui::Begin("Sensor Controls");
 
-        // text 
-        ImGui::Text("Altitude = %0.3f", altitude);
+        // Sliders
+        ImGui::SliderFloat("Altitude", &data.altitude, 0.0f, 10000.0f, "value = %0.3f");
+        ImGui::SliderFloat("Velocity", &data.velocity, 0.0f, 10000.0f, "value = %0.3f");
+        ImGui::SliderFloat("Accel_X", &data.accel_x, 0.0f, 10000.0f, "value = %0.3f");
+        ImGui::SliderFloat("Accel_Y", &data.accel_y, 0.0f, 10000.0f, "value = %0.3f");
+        ImGui::SliderFloat("Accel_Z", &data.accel_z, 0.0f, 10000.0f, "value = %0.3f");
+        ImGui::SliderFloat("battery", &data.battery, 0.0f, 10000.0f, "value = %0.3f");
+        ImGui::Checkbox("GPS Lock: ", &data.gps_lock);
+        ImGui::Checkbox("RF Lock:", &data.radio_lock);
 
         ImGui::End();
 
+        ImGui::Begin("State Machine");
+        // ImGui::Text("Current: %s", data.state.c_str());
+        ImGui::Text("\nTransitions: \n");
+        ImGui::End();
+
+        ImGui::Begin("State History Timeline");
+          
+        ImGui::End();
 
         // Render
         ImGui::Render();

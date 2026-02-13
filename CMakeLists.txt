@@ -40,6 +40,7 @@ set(APOLLO_SOURCES
 # Create executable
 add_executable(apollo ${APOLLO_SOURCES} ${IMGUI_SOURCES} ${GLAD_SOURCES})
 
+# TODO: add target compile options for compile flags
 # TODO: add subdirectories
 
 # include directories
