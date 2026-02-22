@@ -1,24 +1,23 @@
 #pragma once
 
-#include <cstdint>
+#include "state.h"
+#include "sensor_data.h"
+#include <vector>
+#include <functional>
 
-// Flight states
-typedef enum : uint8_t
-{
-  INIT,
-  IDLE,
-  BOOST,
-  BURNOUT,
-  COAST,
-  APOGEE,
-  DESCENT_DROGUE,
-  DESCENT_MAIN,
-  LANDED
-} SM_State;
+class StateMachine {
 
-/* TODO:
- *
- * A collection of states
- * Which state is currently active
- * A collection of transitions (each transition needs: where it comes FROM, where it goes TO, and a CONDITION that determines when it fires)
- */
+  private:
+    struct Transition {
+      State* from;
+      State* to;
+      bool (*condition)(SensorData&); // function pointer
+    };
+    std::vector<State*> states;
+    std::vector<Transition> transitions;
+    State* current_state;
+
+  public:
+    // TODO: write public methods
+
+};

@@ -36,7 +36,7 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    sensor_data data{};
+    SensorData data{};
 
     // Main loop
     while (!glfwWindowShouldClose(window))
