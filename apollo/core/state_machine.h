@@ -20,6 +20,7 @@ private:
   State *current_state;
 
 public:
+  std::vector<Transition> getAvailableTransitions() const;
   StateMachine();
   void addState(State *state);
   void setInitState(State *state);

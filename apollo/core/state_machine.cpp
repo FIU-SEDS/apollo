@@ -40,3 +40,18 @@ void StateMachine::update(SensorData &sensors)
     }
   }
 }
+
+std::vector<StateMachine::Transition> StateMachine::getAvailableTransitions() const
+{
+  std::vector<Transition> available;
+
+  for (const auto &transition : transitions)
+  {
+    if (transition.from == current_state)
+    {
+      available.push_back(transition);
+    }
+  }
+
+  return available;
+}
