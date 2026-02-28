@@ -5,19 +5,25 @@
 #include <vector>
 #include <functional>
 
-class StateMachine {
+class StateMachine
+{
 
-  private:
-    struct Transition {
-      State* from;
-      State* to;
-      bool (*condition)(SensorData&); // function pointer
-    };
-    std::vector<State*> states;
-    std::vector<Transition> transitions;
-    State* current_state;
+private:
+  struct Transition
+  {
+    State *from;
+    State *to;
+    bool (*condition)(SensorData &); // function pointer
+  };
+  std::vector<State *> states;
+  std::vector<Transition> transitions;
+  State *current_state;
 
-  public:
-    // TODO: write public methods
-
+public:
+  StateMachine();
+  void addState(State *state);
+  void setInitState(State *state);
+  void defineTransition(State *from, State *to, bool (*condition)(SensorData &));
+  void update(SensorData &sensors);
+  State *getCurrentState();
 };

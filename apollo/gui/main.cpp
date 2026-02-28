@@ -1,13 +1,26 @@
 #include <cstdio>
+#include <iostream>
 #include <string>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "core/sensor_data.h"
+#include "core/state_machine.h"
+#include "core/state.h"
 
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
+// Define condition functions
+bool check_boost(SensorData &s)
+{
+    return s.accel_z > 30.0;
+};
+
+bool check_coast(SensorData &s)
+{
+    return s.accel_z < 10.0;
+};
 
 int main()
 {
@@ -21,7 +34,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Apollo", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(800, 600, "Apollo", NULL, NULL);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
@@ -37,6 +50,33 @@ int main()
     ImGui_ImplOpenGL3_Init("#version 330");
 
     SensorData data{};
+
+    // Before your GUI loop starts:
+    StateMachine test_sm;
+
+    State idle("IDLE");
+    State boost("BOOST");
+    State coast("COAST");
+
+    test_sm.addState(&idle);
+    test_sm.addState(&boost);
+    test_sm.addState(&coast);
+    test_sm.setInitState(&idle);
+
+    test_sm.defineTransition(&idle, &boost, check_boost);
+    test_sm.defineTransition(&boost, &coast, check_coast);
+
+    // Test it
+    SensorData sensors;
+    std::cout << "Initial: " << test_sm.getCurrentState()->name << "\n";
+
+    sensors.accel_z = 35.0;
+    test_sm.update(sensors);
+    std::cout << "After accel=35: " << test_sm.getCurrentState()->name << "\n";
+
+    sensors.accel_z = 5.0;
+    test_sm.update(sensors);
+    std::cout << "After accel=5: " << test_sm.getCurrentState()->name << "\n";
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -69,7 +109,7 @@ int main()
         ImGui::End();
 
         ImGui::Begin("State History Timeline");
-          
+
         ImGui::End();
 
         // Render
@@ -94,4 +134,3 @@ int main()
 
     return 0;
 }
-
