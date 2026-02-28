@@ -34,6 +34,24 @@ void StateMachine::update(SensorData &sensors)
     {
       if (transition.condition(sensors))
       {
+        // Record the state change
+        auto now = std::chrono::system_clock::now();
+        auto time_t_now = std::chrono::system_clock::to_time_t(now);
+        auto local_time = std::localtime(&time_t_now);
+
+        std::stringstream ss;
+        ss << std::setfill('0')
+           << std::setw(2) << local_time->tm_hour << ":"
+           << std::setw(2) << local_time->tm_min << ":"
+           << std::setw(2) << local_time->tm_sec;
+
+        StateChange change;
+        change.from_state = current_state->name;
+        change.to_state = transition.to->name;
+        change.timestamp = ss.str();
+        history.push_back(change);
+
+        // Now change the state
         current_state = transition.to;
         return;
       }
@@ -54,4 +72,14 @@ std::vector<StateMachine::Transition> StateMachine::getAvailableTransitions() co
   }
 
   return available;
+}
+
+const std::vector<StateMachine::StateChange> &StateMachine::getHistory() const
+{
+  return history;
+}
+
+void StateMachine::clearHistory()
+{
+  history.clear();
 }

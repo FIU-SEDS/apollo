@@ -12,15 +12,41 @@
 #include "backends/imgui_impl_opengl3.h"
 
 // Define condition functions
+// Existing
 bool check_boost(SensorData &s)
 {
-    return s.accel_z > 1000.0;
-};
+    return s.accel_z > 1000.0; // 3+ Gs indicates liftoff
+}
+
+bool check_burnout(SensorData &s)
+{
+    return s.accel_z < 500.0; // Motor burned out, accel dropping
+}
 
 bool check_coast(SensorData &s)
 {
-    return s.accel_z < 300.0;
-};
+    return s.accel_z < 100.0; // Low acceleration, coasting
+}
+
+bool check_apogee(SensorData &s)
+{
+    return s.velocity < 0.0; // Velocity goes negative = falling
+}
+
+bool check_descent_drogue(SensorData &s)
+{
+    return true; // Immediately after apogee
+}
+
+bool check_descent_main(SensorData &s)
+{
+    return s.altitude < 1000.0; // Deploy main chute at 1000 ft
+}
+
+bool check_landed(SensorData &s)
+{
+    return s.altitude < 50.0 && s.velocity > -10.0; // Near ground, slow descent
+}
 
 int main()
 {
@@ -74,7 +100,12 @@ int main()
     rocket.setInitState(&idle);
 
     rocket.defineTransition(&idle, &boost, check_boost);
-    rocket.defineTransition(&boost, &coast, check_coast);
+    rocket.defineTransition(&boost, &burnout, check_burnout);
+    rocket.defineTransition(&burnout, &coast, check_coast);
+    rocket.defineTransition(&coast, &apogee, check_apogee);
+    rocket.defineTransition(&apogee, &descent_drogue, check_descent_drogue);
+    rocket.defineTransition(&descent_drogue, &descent_main, check_descent_main);
+    rocket.defineTransition(&descent_main, &landed, check_landed);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -97,7 +128,7 @@ int main()
 
         // Sliders
         ImGui::SliderFloat("Altitude", &sensors.altitude, 0.0f, 10000.0f, "value = %0.3f");
-        ImGui::SliderFloat("Velocity", &sensors.velocity, 0.0f, 10000.0f, "value = %0.3f");
+        ImGui::SliderFloat("Velocity", &sensors.velocity, -10000.0f, 10000.0f, "value = %0.3f");
         ImGui::SliderFloat("Accel_X", &sensors.accel_x, 0.0f, 10000.0f, "value = %0.3f");
         ImGui::SliderFloat("Accel_Y", &sensors.accel_y, 0.0f, 10000.0f, "value = %0.3f");
         ImGui::SliderFloat("Accel_Z", &sensors.accel_z, 0.0f, 10000.0f, "value = %0.3f");
@@ -118,6 +149,8 @@ int main()
             sensors.radio_lock = false;
 
             rocket.setInitState(&idle);
+
+            rocket.clearHistory();
         }
 
         ImGui::End();
@@ -146,6 +179,23 @@ int main()
         ImGui::SetNextWindowPos(ImVec2(window_width * 0.25f, window_height * 0.6f));
         ImGui::SetNextWindowSize(ImVec2(window_width * 0.75f, window_height * 0.4f));
         ImGui::Begin("State History Timeline", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+
+        auto history = rocket.getHistory();
+
+        if (history.empty())
+        {
+            ImGui::Text("No state changes yet...");
+        }
+        else
+        {
+            for (const auto &change : history)
+            {
+                ImGui::Text("[%s] %s -> %s",
+                            change.timestamp.c_str(),
+                            change.from_state.c_str(),
+                            change.to_state.c_str());
+            }
+        }
         ImGui::End();
 
         rocket.update(sensors);
