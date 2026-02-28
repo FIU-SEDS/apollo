@@ -14,12 +14,12 @@
 // Define condition functions
 bool check_boost(SensorData &s)
 {
-    return s.accel_z > 30.0;
+    return s.accel_z > 1000.0;
 };
 
 bool check_coast(SensorData &s)
 {
-    return s.accel_z < 10.0;
+    return s.accel_z < 300.0;
 };
 
 int main()
@@ -49,34 +49,32 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    SensorData data{};
+    SensorData sensors;
+    StateMachine rocket;
 
-    // Before your GUI loop starts:
-    StateMachine test_sm;
-
+    State init("INIT");
     State idle("IDLE");
     State boost("BOOST");
+    State burnout("BURNOUT");
     State coast("COAST");
+    State apogee("APOGEE");
+    State descent_drogue("DESCENT_DROGUE");
+    State descent_main("DESCENT_MAIN");
+    State landed("LANDED");
 
-    test_sm.addState(&idle);
-    test_sm.addState(&boost);
-    test_sm.addState(&coast);
-    test_sm.setInitState(&idle);
+    rocket.addState(&init);
+    rocket.addState(&idle);
+    rocket.addState(&boost);
+    rocket.addState(&burnout);
+    rocket.addState(&coast);
+    rocket.addState(&apogee);
+    rocket.addState(&descent_drogue);
+    rocket.addState(&descent_main);
+    rocket.addState(&landed);
+    rocket.setInitState(&idle);
 
-    test_sm.defineTransition(&idle, &boost, check_boost);
-    test_sm.defineTransition(&boost, &coast, check_coast);
-
-    // Test it
-    SensorData sensors;
-    std::cout << "Initial: " << test_sm.getCurrentState()->name << "\n";
-
-    sensors.accel_z = 35.0;
-    test_sm.update(sensors);
-    std::cout << "After accel=35: " << test_sm.getCurrentState()->name << "\n";
-
-    sensors.accel_z = 5.0;
-    test_sm.update(sensors);
-    std::cout << "After accel=5: " << test_sm.getCurrentState()->name << "\n";
+    rocket.defineTransition(&idle, &boost, check_boost);
+    rocket.defineTransition(&boost, &coast, check_coast);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -86,31 +84,71 @@ int main()
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        ImGui::SetNextWindowSize(ImVec2(0.0f, 0.0f));
+        // Get window dimensions
+        ImGuiIO &io = ImGui::GetIO();
+        float window_width = io.DisplaySize.x;
+        float window_height = io.DisplaySize.y;
 
-        // UI
-        ImGui::Begin("Sensor Controls");
+        // Left panel - sensor values
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(ImVec2(window_width * 0.25f, window_height));
+        // CHANGE: Add flags here
+        ImGui::Begin("Sensor Controls", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
 
         // Sliders
-        ImGui::SliderFloat("Altitude", &data.altitude, 0.0f, 10000.0f, "value = %0.3f");
-        ImGui::SliderFloat("Velocity", &data.velocity, 0.0f, 10000.0f, "value = %0.3f");
-        ImGui::SliderFloat("Accel_X", &data.accel_x, 0.0f, 10000.0f, "value = %0.3f");
-        ImGui::SliderFloat("Accel_Y", &data.accel_y, 0.0f, 10000.0f, "value = %0.3f");
-        ImGui::SliderFloat("Accel_Z", &data.accel_z, 0.0f, 10000.0f, "value = %0.3f");
-        ImGui::SliderFloat("battery", &data.battery, 0.0f, 10000.0f, "value = %0.3f");
-        ImGui::Checkbox("GPS Lock: ", &data.gps_lock);
-        ImGui::Checkbox("RF Lock:", &data.radio_lock);
+        ImGui::SliderFloat("Altitude", &sensors.altitude, 0.0f, 10000.0f, "value = %0.3f");
+        ImGui::SliderFloat("Velocity", &sensors.velocity, 0.0f, 10000.0f, "value = %0.3f");
+        ImGui::SliderFloat("Accel_X", &sensors.accel_x, 0.0f, 10000.0f, "value = %0.3f");
+        ImGui::SliderFloat("Accel_Y", &sensors.accel_y, 0.0f, 10000.0f, "value = %0.3f");
+        ImGui::SliderFloat("Accel_Z", &sensors.accel_z, 0.0f, 10000.0f, "value = %0.3f");
+        ImGui::SliderFloat("battery", &sensors.battery, 0.0f, 10000.0f, "value = %0.3f");
+        ImGui::Checkbox("GPS Lock: ", &sensors.gps_lock);
+        ImGui::Checkbox("RF Lock:", &sensors.radio_lock);
+
+        if (ImGui::Button("Reset"))
+        {
+            // Reset all sensor values to zero
+            sensors.altitude = 0.0f;
+            sensors.velocity = 0.0f;
+            sensors.accel_x = 0.0f;
+            sensors.accel_y = 0.0f;
+            sensors.accel_z = 0.0f;
+            sensors.battery = 0.0f;
+            sensors.gps_lock = false;
+            sensors.radio_lock = false;
+
+            rocket.setInitState(&idle);
+        }
 
         ImGui::End();
 
-        ImGui::Begin("State Machine");
-        // ImGui::Text("Current: %s", data.state.c_str());
-        ImGui::Text("\nTransitions: \n");
+        // Right panel - state machine
+        ImGui::SetNextWindowPos(ImVec2(window_width * 0.25f, 0));
+        ImGui::SetNextWindowSize(ImVec2(window_width * 0.75f, window_height * 0.6f));
+        ImGui::Begin("State Machine", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+        ImGui::Text("Current: %s", rocket.getCurrentState()->name.c_str());
+
+        ImGui::SeparatorText("Transitions");
+        auto available = rocket.getAvailableTransitions();
+
+        for (const auto &trans : available)
+        {
+            bool can_fire = trans.condition(sensors);
+            ImGui::Text("%s %s -> %s",
+                        can_fire ? "[✓]" : "[ ]",
+                        trans.from->name.c_str(),
+                        trans.to->name.c_str());
+        }
+
         ImGui::End();
 
-        ImGui::Begin("State History Timeline");
-
+        // Bottom Right Panel - timelinee
+        ImGui::SetNextWindowPos(ImVec2(window_width * 0.25f, window_height * 0.6f));
+        ImGui::SetNextWindowSize(ImVec2(window_width * 0.75f, window_height * 0.4f));
+        ImGui::Begin("State History Timeline", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
         ImGui::End();
+
+        rocket.update(sensors);
 
         // Render
         ImGui::Render();
