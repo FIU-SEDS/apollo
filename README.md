@@ -1,8 +1,45 @@
 # apollo
 
+## Instructions
+
+in order to build/run the project here are the steps:
+
+1. create `build/` dir using cmake
+2. copy `compile_commands.json` from `build/` to root dir `(ie. apollo/)`
+3. run `cmake --build apollo/build/` to create exectuable
+
+in `apollo/` root dir run the command
+
+```bash
+cmake -B apollo/build/
+```
+
+then move `.json` file fro `build/` to `apollo/` root:
+
+```bash
+ln -s apollo/build/compile_commands.json .
+```
+
+create the project executable:
+
+```bash
+cmake --build apollo/build/
+```
+
+run the application in prooject root:
+
+```bash
+./apollo/build/apollo
+```
+
+## CURRENT UPDATE
+
+![March Update of GUI progress and logic](assets/march-update-gui.png)
+March Update of GUI progress and logic
 ## plan
 
-### GUI 
+### GUI
+
 ```bash
 ┌─────────────────┬──────────────────────┐
 │ State Machine   │ Sensor Controls      │
