@@ -26,7 +26,7 @@ create the project executable:
 cmake --build apollo/build/
 ```
 
-run the application in prooject root:
+run the application in project root:
 
 ```bash
 ./apollo/build/apollo
